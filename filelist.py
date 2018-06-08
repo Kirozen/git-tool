@@ -9,23 +9,25 @@ import humanfriendly as hf
 GitFile = namedtuple('GitFile', ['name', 'size', 'hash'])
 
 
+def get_all_blobs(tree):
+    blobs = list(tree.blobs)
+    for t in tree.trees:
+        blobs.extend(get_all_blobs(t))
+    return blobs
+
+
 def main(human, number, repo):
-    g = git.cmd.Git(repo)
-    print('Get list of blobs...')
-    try:
-        hashes = g.rev_list(all=True).split()
-    except git.GitCommandError:
-        print('%s is not a valid git repository' % repo)
-        return
-    print('%d blobs retrieved' % (len(hashes)))
+    g = git.Repo(repo)
+    print('Get list of commits...')
+    count = len(tuple(g.iter_commits()))
+    commits = g.iter_commits()
+    print('%d commits retrieved' % count)
     print('Compute list of files...')
     files = set()
-    for sha1 in tqdm(hashes):
-        raw_files = g.ls_tree(sha1, r=True, l=True).split('\n')
-        for rf in raw_files:
-            data = rf.split()
-            if data[1] == 'blob':
-                files.add(GitFile(name=data[4], size=int(data[3]), hash=data[2]))
+    for commit in tqdm(commits, total=count):
+        blobs = get_all_blobs(commit.tree)
+        for blob in blobs:
+            files.add(GitFile(name=blob.path, size=blob.size, hash=blob.hexsha))
     print('%d files retrieved' % (len(files)))
     if number == 0:
         number = len(files)
