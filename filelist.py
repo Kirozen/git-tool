@@ -24,7 +24,8 @@ def main(human, number, repo):
         raw_files = g.ls_tree(sha1, r=True, l=True).split('\n')
         for rf in raw_files:
             data = rf.split()
-            files.add(GitFile(name=data[4], size=int(data[3]), hash=data[2]))
+            if data[1] == 'blob':
+                files.add(GitFile(name=data[4], size=int(data[3]), hash=data[2]))
     print('%d files retrieved' % (len(files)))
     if number == 0:
         number = len(files)
