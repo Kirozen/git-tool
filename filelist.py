@@ -26,6 +26,8 @@ def main(human, number, repo):
             data = rf.split()
             files.add(GitFile(name=data[4], size=int(data[3]), hash=data[2]))
     print('%d files retrieved' % (len(files)))
+    if number == 0:
+        number = len(files)
     print()
     print()
     print('Sort and print %d biggest files :' % (number if number < len(files) else len(files)))
@@ -41,7 +43,7 @@ def main(human, number, repo):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract list of files from git repository')
     parser.add_argument('-H', action='store_true', help='human readable size')
-    parser.add_argument('-n', default=10, type=int, help='number of files to print')
+    parser.add_argument('-n', default=10, type=int, help='number of files to print (0 prints complete list)')
     parser.add_argument('repo', help='git repository')
     args = parser.parse_args()
     main(human=args.H, number=args.n, repo=args.repo)
