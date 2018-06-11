@@ -1,19 +1,9 @@
-from collections import namedtuple
 from operator import attrgetter
 import argparse
 
 import git
 from tqdm import tqdm
 import humanfriendly as hf
-
-GitFile = namedtuple('GitFile', ['name', 'size', 'hash'])
-
-
-def get_all_blobs(tree):
-    blobs = list(tree.blobs)
-    for t in tree.trees:
-        blobs.extend(get_all_blobs(t))
-    return blobs
 
 
 def main(human, number, repo):
@@ -23,11 +13,7 @@ def main(human, number, repo):
     commits = g.iter_commits()
     print('%d commits retrieved' % count)
     print('Compute list of files...')
-    files = set()
-    for commit in tqdm(commits, total=count):
-        blobs = get_all_blobs(commit.tree)
-        for blob in blobs:
-            files.add(GitFile(name=blob.path, size=blob.size, hash=blob.hexsha))
+    files = {item for commit in tqdm(commits, total=count) for item in commit.tree.traverse() if item.type == 'blob'}
     print('%d files retrieved' % (len(files)))
     if number == 0:
         number = len(files)
@@ -39,8 +25,8 @@ def main(human, number, repo):
         printer = lambda x: hf.format_size(x, binary=True)
     else:
         printer = str
-    for f in sorted(list(files), key=attrgetter('size'), reverse=True)[:number]:
-        print('%s\t%s\t\t%s' % (f.hash, printer(f.size), f.name))
+    for f in sorted(files, key=attrgetter('size'), reverse=True)[:number]:
+        print('%s\t%s\t\t%s' % (f.hexsha, printer(f.size), f.path))
 
 
 if __name__ == '__main__':
